@@ -107,9 +107,9 @@ _Last updated: 2025-06-28 15:58 UTC_
 ## Installation
 
 Requirements:
-- python >3.10
-- Nvidia GPU with enough ram to do what you need
-- python venv
+- python = 3.12
+- AMD GPU with enough ram to do what you need
+- python venv or conda (conda is better)
 - git
 
 
