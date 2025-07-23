@@ -120,8 +120,10 @@ cd ai-toolkit
 python3 -m venv venv
 source venv/bin/activate
 # install torch first
-pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.4
-pip3 install -r requirements.txt
+pip3 install --pre torch torchvision torchaudio torchao --index-url https://download.pytorch.org/whl/nightly/rocm6.4
+pip3 install -r 
+pip uninstall onnxruntime-gpu
+pip install onnxruntime_rocm -f https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.1/
 ```
 
 Windows:
