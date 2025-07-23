@@ -120,7 +120,7 @@ cd ai-toolkit
 python3 -m venv venv
 source venv/bin/activate
 # install torch first
-pip3 install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu126
+pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.4
 pip3 install -r requirements.txt
 ```
 
