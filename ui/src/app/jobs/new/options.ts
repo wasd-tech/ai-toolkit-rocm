@@ -1,4 +1,4 @@
-import { GroupedSelectOption } from "@/types";
+import { GroupedSelectOption, SelectOption } from '@/types';
 
 type Control = 'depth' | 'line' | 'pose' | 'inpaint';
 
@@ -18,9 +18,6 @@ export interface ModelArch {
 }
 
 const defaultNameOrPath = '';
-
-
-
 
 export const modelArchs: ModelArch[] = [
   {
@@ -185,6 +182,28 @@ export const modelArchs: ModelArch[] = [
     additionalSections: ['datasets.num_frames', 'model.low_vram'],
   },
   {
+    name: 'wan22_5b',
+    label: 'Wan 2.2 TI2V (5B)',
+    group: 'video',
+    isVideoModel: true,
+    defaults: {
+      // default updates when [selected, unselected] in the UI
+      'config.process[0].model.name_or_path': ['Wan-AI/Wan2.2-TI2V-5B-Diffusers', defaultNameOrPath],
+      'config.process[0].model.quantize': [true, false],
+      'config.process[0].model.quantize_te': [true, false],
+      'config.process[0].model.low_vram': [true, false],
+      'config.process[0].sample.sampler': ['flowmatch', 'flowmatch'],
+      'config.process[0].train.noise_scheduler': ['flowmatch', 'flowmatch'],
+      'config.process[0].sample.num_frames': [121, 1],
+      'config.process[0].sample.fps': [24, 1],
+      'config.process[0].sample.width': [768, 1024],
+      'config.process[0].sample.height': [768, 1024],
+      'config.process[0].train.timestep_type': ['weighted', 'sigmoid'],
+    },
+    disableSections: ['network.conv'],
+    additionalSections: ['sample.ctrl_img', 'datasets.num_frames', 'model.low_vram'],
+  },
+  {
     name: 'lumina2',
     label: 'Lumina2',
     group: 'image',
@@ -214,6 +233,25 @@ export const modelArchs: ModelArch[] = [
       'config.process[0].network.network_kwargs.ignore_if_contains': [['ff_i.experts', 'ff_i.gate'], []],
     },
     disableSections: ['network.conv'],
+    additionalSections: ['model.low_vram'],
+  },
+  {
+    name: 'hidream_e1',
+    label: 'HiDream E1',
+    group: 'image',
+    defaults: {
+      // default updates when [selected, unselected] in the UI
+      'config.process[0].model.name_or_path': ['HiDream-ai/HiDream-E1-1', defaultNameOrPath],
+      'config.process[0].model.quantize': [true, false],
+      'config.process[0].model.quantize_te': [true, false],
+      'config.process[0].sample.sampler': ['flowmatch', 'flowmatch'],
+      'config.process[0].train.noise_scheduler': ['flowmatch', 'flowmatch'],
+      'config.process[0].train.lr': [0.0001, 0.0001],
+      'config.process[0].train.timestep_type': ['weighted', 'sigmoid'],
+      'config.process[0].network.network_kwargs.ignore_if_contains': [['ff_i.experts', 'ff_i.gate'], []],
+    },
+    disableSections: ['network.conv'],
+    additionalSections: ['datasets.control_path', 'sample.ctrl_img', 'model.low_vram'],
   },
   {
     name: 'sdxl',
@@ -262,9 +300,8 @@ export const modelArchs: ModelArch[] = [
   },
 ].sort((a, b) => {
   // Sort by label, case-insensitive
-  return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' })
+  return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
 }) as any;
-
 
 export const groupedModelOptions: GroupedSelectOption[] = modelArchs.reduce((acc, arch) => {
   const group = acc.find(g => g.label === arch.group);
@@ -278,3 +315,17 @@ export const groupedModelOptions: GroupedSelectOption[] = modelArchs.reduce((acc
   }
   return acc;
 }, [] as GroupedSelectOption[]);
+
+export const quantizationOptions: SelectOption[] = [
+  { value: '', label: '- NONE -' },
+  { value: 'qfloat8', label: 'float8 (default)' },
+  { value: 'uint8', label: '8 bit' },
+  { value: 'uint7', label: '7 bit' },
+  { value: 'uint6', label: '6 bit' },
+  { value: 'uint5', label: '5 bit' },
+  { value: 'uint4', label: '4 bit' },
+  { value: 'uint3', label: '3 bit' },
+  { value: 'uint2', label: '2 bit' },
+];
+
+export const defaultQtype = 'qfloat8';
