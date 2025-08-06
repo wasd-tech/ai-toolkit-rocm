@@ -3,7 +3,7 @@ import { GroupedSelectOption, SelectOption } from '@/types';
 type Control = 'depth' | 'line' | 'pose' | 'inpaint';
 
 type DisableableSections = 'model.quantize' | 'train.timestep_type' | 'network.conv';
-type AdditionalSections = 'datasets.control_path' | 'sample.ctrl_img' | 'datasets.num_frames' | 'model.low_vram';
+type AdditionalSections = 'datasets.control_path' | 'datasets.do_i2v' | 'sample.ctrl_img' | 'datasets.num_frames' | 'model.low_vram';
 type ModelGroup = 'image' | 'video';
 
 export interface ModelArch {
@@ -201,7 +201,7 @@ export const modelArchs: ModelArch[] = [
       'config.process[0].train.timestep_type': ['weighted', 'sigmoid'],
     },
     disableSections: ['network.conv'],
-    additionalSections: ['sample.ctrl_img', 'datasets.num_frames', 'model.low_vram'],
+    additionalSections: ['sample.ctrl_img', 'datasets.num_frames', 'model.low_vram', 'datasets.do_i2v'],
   },
   {
     name: 'lumina2',
@@ -216,6 +216,23 @@ export const modelArchs: ModelArch[] = [
       'config.process[0].train.noise_scheduler': ['flowmatch', 'flowmatch'],
     },
     disableSections: ['network.conv'],
+  },
+  {
+    name: 'qwen_image',
+    label: 'Qwen-Image',
+    group: 'image',
+    defaults: {
+      // default updates when [selected, unselected] in the UI
+      'config.process[0].model.name_or_path': ['Qwen/Qwen-Image', defaultNameOrPath],
+      'config.process[0].model.quantize': [true, false],
+      'config.process[0].model.quantize_te': [true, false],
+      'config.process[0].model.low_vram': [true, false],
+      'config.process[0].sample.sampler': ['flowmatch', 'flowmatch'],
+      'config.process[0].train.noise_scheduler': ['flowmatch', 'flowmatch'],
+      'config.process[0].train.timestep_type': ['weighted', 'sigmoid'],
+    },
+    disableSections: ['network.conv'],
+    additionalSections: ['model.low_vram'],
   },
   {
     name: 'hidream',
