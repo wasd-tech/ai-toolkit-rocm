@@ -185,6 +185,9 @@ class NetworkConfig:
             self.conv_alpha = 9999999999
         # -1 automatically finds the largest factor
         self.lokr_factor = kwargs.get('lokr_factor', -1)
+        
+        # for multi stage models
+        self.split_multistage_loras = kwargs.get('split_multistage_loras', True)
 
 
 AdapterTypes = Literal['t2i', 'ip', 'ip+', 'clip', 'ilora', 'photo_maker', 'control_net', 'control_lora', 'i2v']
@@ -332,7 +335,7 @@ class TrainConfig:
         self.lr_scheduler = kwargs.get('lr_scheduler', 'constant')
         self.lr_scheduler_params = kwargs.get('lr_scheduler_params', {})
         self.min_denoising_steps: int = kwargs.get('min_denoising_steps', 0)
-        self.max_denoising_steps: int = kwargs.get('max_denoising_steps', 1000)
+        self.max_denoising_steps: int = kwargs.get('max_denoising_steps', 999)
         self.batch_size: int = kwargs.get('batch_size', 1)
         self.orig_batch_size: int = self.batch_size
         self.dtype: str = kwargs.get('dtype', 'fp32')
@@ -462,7 +465,7 @@ class TrainConfig:
 
         ema_config: Union[Dict, None] = kwargs.get('ema_config', None)
         # if it is set explicitly to false, leave it false. 
-        if ema_config is not None and ema_config.get('use_ema', None) is not None:
+        if ema_config is not None and ema_config.get('use_ema', False):
             ema_config['use_ema'] = True
             print(f"Using EMA")
         else:
@@ -482,6 +485,8 @@ class TrainConfig:
         # will cache a blank prompt or the trigger word, and unload the text encoder to cpu
         # will make training faster and use less vram
         self.unload_text_encoder = kwargs.get('unload_text_encoder', False)
+        # will toggle all datasets to cache text embeddings
+        self.cache_text_embeddings: bool = kwargs.get('cache_text_embeddings', False)
         # for swapping which parameters are trained during training
         self.do_paramiter_swapping = kwargs.get('do_paramiter_swapping', False)
         # 0.1 is 10% of the parameters active at a time lower is less vram, higher is more
@@ -510,6 +515,9 @@ class TrainConfig:
         self.unconditional_prompt: str = kwargs.get('unconditional_prompt', '')
         if isinstance(self.guidance_loss_target, tuple):
             self.guidance_loss_target = list(self.guidance_loss_target)
+        
+        # for multi stage models, how often to switch the boundary
+        self.switch_boundary_every: int = kwargs.get('switch_boundary_every', 1)
 
 
 ModelArch = Literal['sd1', 'sd2', 'sd3', 'sdxl', 'pixart', 'pixart_sigma', 'auraflow', 'flux', 'flex1', 'flex2', 'lumina2', 'vega', 'ssd', 'wan21']
@@ -598,6 +606,16 @@ class ModelConfig:
         # only setup for some models but will prevent having to download the te for
         # 20 different model variants
         self.extras_name_or_path = kwargs.get("extras_name_or_path", self.name_or_path)
+        
+        # path to an accuracy recovery adapter, either local or remote
+        self.accuracy_recovery_adapter = kwargs.get("accuracy_recovery_adapter", None)
+        
+        # parse ARA from qtype
+        if self.qtype is not None and "|" in self.qtype:
+            self.qtype, self.accuracy_recovery_adapter = self.qtype.split('|')
+
+        # compile the model with torch compile
+        self.compile = kwargs.get("compile", False)
         
         # kwargs to pass to the model
         self.model_kwargs = kwargs.get("model_kwargs", {})
@@ -1189,6 +1207,7 @@ def validate_configs(
     train_config: TrainConfig,
     model_config: ModelConfig,
     save_config: SaveConfig,
+    dataset_configs: List[DatasetConfig]
 ):
     if model_config.is_flux:
         if save_config.save_format != 'diffusers':
@@ -1200,3 +1219,18 @@ def validate_configs(
     if train_config.bypass_guidance_embedding and train_config.do_guidance_loss:
         raise ValueError("Cannot bypass guidance embedding and do guidance loss at the same time. "
                          "Please set bypass_guidance_embedding to False or do_guidance_loss to False.")
+
+    # see if any datasets are caching text embeddings
+    is_caching_text_embeddings = any(dataset.cache_text_embeddings for dataset in dataset_configs)
+    if is_caching_text_embeddings:
+        
+        # check if they are doing differential output preservation
+        if train_config.diff_output_preservation:
+            raise ValueError("Cannot use differential output preservation with caching text embeddings. Please set diff_output_preservation to False.")
+    
+        # make sure they are all cached
+        for dataset in dataset_configs:
+            if not dataset.cache_text_embeddings:
+                raise ValueError("All datasets must have cache_text_embeddings set to True when caching text embeddings is enabled.")
+
+    

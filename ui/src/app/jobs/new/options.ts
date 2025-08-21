@@ -3,7 +3,13 @@ import { GroupedSelectOption, SelectOption } from '@/types';
 type Control = 'depth' | 'line' | 'pose' | 'inpaint';
 
 type DisableableSections = 'model.quantize' | 'train.timestep_type' | 'network.conv';
-type AdditionalSections = 'datasets.control_path' | 'datasets.do_i2v' | 'sample.ctrl_img' | 'datasets.num_frames' | 'model.low_vram';
+type AdditionalSections =
+  | 'datasets.control_path'
+  | 'datasets.do_i2v'
+  | 'sample.ctrl_img'
+  | 'datasets.num_frames'
+  | 'model.multistage'
+  | 'model.low_vram';
 type ModelGroup = 'image' | 'video';
 
 export interface ModelArch {
@@ -15,6 +21,7 @@ export interface ModelArch {
   defaults?: { [key: string]: any };
   disableSections?: DisableableSections[];
   additionalSections?: AdditionalSections[];
+  accuracyRecoveryAdapters?: { [key: string]: string };
 }
 
 const defaultNameOrPath = '';
@@ -120,7 +127,7 @@ export const modelArchs: ModelArch[] = [
       'config.process[0].sample.sampler': ['flowmatch', 'flowmatch'],
       'config.process[0].train.noise_scheduler': ['flowmatch', 'flowmatch'],
       'config.process[0].sample.num_frames': [41, 1],
-      'config.process[0].sample.fps': [15, 1],
+      'config.process[0].sample.fps': [16, 1],
     },
     disableSections: ['network.conv'],
     additionalSections: ['datasets.num_frames', 'model.low_vram'],
@@ -138,7 +145,7 @@ export const modelArchs: ModelArch[] = [
       'config.process[0].sample.sampler': ['flowmatch', 'flowmatch'],
       'config.process[0].train.noise_scheduler': ['flowmatch', 'flowmatch'],
       'config.process[0].sample.num_frames': [41, 1],
-      'config.process[0].sample.fps': [15, 1],
+      'config.process[0].sample.fps': [16, 1],
       'config.process[0].train.timestep_type': ['weighted', 'sigmoid'],
     },
     disableSections: ['network.conv'],
@@ -157,7 +164,7 @@ export const modelArchs: ModelArch[] = [
       'config.process[0].sample.sampler': ['flowmatch', 'flowmatch'],
       'config.process[0].train.noise_scheduler': ['flowmatch', 'flowmatch'],
       'config.process[0].sample.num_frames': [41, 1],
-      'config.process[0].sample.fps': [15, 1],
+      'config.process[0].sample.fps': [16, 1],
       'config.process[0].train.timestep_type': ['weighted', 'sigmoid'],
     },
     disableSections: ['network.conv'],
@@ -176,10 +183,67 @@ export const modelArchs: ModelArch[] = [
       'config.process[0].sample.sampler': ['flowmatch', 'flowmatch'],
       'config.process[0].train.noise_scheduler': ['flowmatch', 'flowmatch'],
       'config.process[0].sample.num_frames': [41, 1],
-      'config.process[0].sample.fps': [15, 1],
+      'config.process[0].sample.fps': [16, 1],
     },
     disableSections: ['network.conv'],
     additionalSections: ['datasets.num_frames', 'model.low_vram'],
+  },
+  {
+    name: 'wan22_14b:t2v',
+    label: 'Wan 2.2 (14B)',
+    group: 'video',
+    isVideoModel: true,
+    defaults: {
+      // default updates when [selected, unselected] in the UI
+      'config.process[0].model.name_or_path': ['ai-toolkit/Wan2.2-T2V-A14B-Diffusers-bf16', defaultNameOrPath],
+      'config.process[0].model.quantize': [true, false],
+      'config.process[0].model.quantize_te': [true, false],
+      'config.process[0].sample.sampler': ['flowmatch', 'flowmatch'],
+      'config.process[0].train.noise_scheduler': ['flowmatch', 'flowmatch'],
+      'config.process[0].sample.num_frames': [41, 1],
+      'config.process[0].sample.fps': [16, 1],
+      'config.process[0].model.low_vram': [true, false],
+      'config.process[0].train.timestep_type': ['linear', 'sigmoid'],
+      'config.process[0].model.model_kwargs': [
+        {
+          train_high_noise: true,
+          train_low_noise: true,
+        },
+        {},
+      ],
+    },
+    disableSections: ['network.conv'],
+    additionalSections: ['datasets.num_frames', 'model.low_vram', 'model.multistage'],
+    // accuracyRecoveryAdapters: {
+    //   '3 bit with ARA': 'uint3|ostris/accuracy_recovery_adapters/wan22_14b_t2i_torchao_uint3.safetensors',
+    // },
+  },
+  {
+    name: 'wan22_14b_i2v',
+    label: 'Wan 2.2 I2V (14B)',
+    group: 'video',
+    isVideoModel: true,
+    defaults: {
+      // default updates when [selected, unselected] in the UI
+      'config.process[0].model.name_or_path': ['ai-toolkit/Wan2.2-I2V-A14B-Diffusers-bf16', defaultNameOrPath],
+      'config.process[0].model.quantize': [true, false],
+      'config.process[0].model.quantize_te': [true, false],
+      'config.process[0].sample.sampler': ['flowmatch', 'flowmatch'],
+      'config.process[0].train.noise_scheduler': ['flowmatch', 'flowmatch'],
+      'config.process[0].sample.num_frames': [41, 1],
+      'config.process[0].sample.fps': [16, 1],
+      'config.process[0].model.low_vram': [true, false],
+      'config.process[0].train.timestep_type': ['linear', 'sigmoid'],
+      'config.process[0].model.model_kwargs': [
+        {
+          train_high_noise: true,
+          train_low_noise: true,
+        },
+        {},
+      ],
+    },
+    disableSections: ['network.conv'],
+    additionalSections: ['sample.ctrl_img', 'datasets.num_frames', 'model.low_vram', 'model.multistage'],
   },
   {
     name: 'wan22_5b',
@@ -230,9 +294,13 @@ export const modelArchs: ModelArch[] = [
       'config.process[0].sample.sampler': ['flowmatch', 'flowmatch'],
       'config.process[0].train.noise_scheduler': ['flowmatch', 'flowmatch'],
       'config.process[0].train.timestep_type': ['weighted', 'sigmoid'],
+      'config.process[0].model.qtype': ['qfloat8', 'qfloat8'],
     },
     disableSections: ['network.conv'],
     additionalSections: ['model.low_vram'],
+    accuracyRecoveryAdapters: {
+      '3 bit with ARA': 'uint3|ostris/accuracy_recovery_adapters/qwen_image_torchao_uint3.safetensors',
+    },
   },
   {
     name: 'hidream',

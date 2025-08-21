@@ -209,6 +209,14 @@ class StableDiffusion:
         # todo update this based on the model
         self.is_transformer = False
         
+        self.sample_prompts_cache = None
+        
+        self.is_multistage = False
+        # a list of multistage boundaries starting with train step 1000 to first idx
+        self.multistage_boundaries: List[float] = [0.0]
+        # a list of trainable multistage boundaries
+        self.trainable_multistage_boundaries: List[int] = [0]
+        
     # properties for old arch for backwards compatibility
     @property
     def is_xl(self):
@@ -1426,18 +1434,22 @@ class StableDiffusion:
                             quad_count=4
                         )
 
-                    # encode the prompt ourselves so we can do fun stuff with embeddings
-                    if isinstance(self.adapter, CustomAdapter):
-                        self.adapter.is_unconditional_run = False
-                    conditional_embeds = self.encode_prompt(gen_config.prompt, gen_config.prompt_2, force_all=True)
+                    if self.sample_prompts_cache is not None:
+                        conditional_embeds = self.sample_prompts_cache[i]['conditional'].to(self.device_torch, dtype=self.torch_dtype)
+                        unconditional_embeds = self.sample_prompts_cache[i]['unconditional'].to(self.device_torch, dtype=self.torch_dtype)
+                    else: 
+                        # encode the prompt ourselves so we can do fun stuff with embeddings
+                        if isinstance(self.adapter, CustomAdapter):
+                            self.adapter.is_unconditional_run = False
+                        conditional_embeds = self.encode_prompt(gen_config.prompt, gen_config.prompt_2, force_all=True)
 
-                    if isinstance(self.adapter, CustomAdapter):
-                        self.adapter.is_unconditional_run = True
-                    unconditional_embeds = self.encode_prompt(
-                        gen_config.negative_prompt, gen_config.negative_prompt_2, force_all=True
-                    )
-                    if isinstance(self.adapter, CustomAdapter):
-                        self.adapter.is_unconditional_run = False
+                        if isinstance(self.adapter, CustomAdapter):
+                            self.adapter.is_unconditional_run = True
+                        unconditional_embeds = self.encode_prompt(
+                            gen_config.negative_prompt, gen_config.negative_prompt_2, force_all=True
+                        )
+                        if isinstance(self.adapter, CustomAdapter):
+                            self.adapter.is_unconditional_run = False
 
                     # allow any manipulations to take place to embeddings
                     gen_config.post_process_embeddings(
@@ -3117,3 +3129,6 @@ class StableDiffusion:
         if self.is_v2:
             return 'sd_2.1'
         return 'sd_1.5'
+
+    def get_model_to_train(self):
+        return self.unet

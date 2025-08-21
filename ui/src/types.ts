@@ -110,6 +110,7 @@ export interface TrainConfig {
   ema_config?: EMAConfig;
   dtype: string;
   unload_text_encoder: boolean;
+  cache_text_embeddings: boolean;
   optimizer_params: {
     weight_decay: number;
   };
@@ -118,6 +119,7 @@ export interface TrainConfig {
   diff_output_preservation: boolean;
   diff_output_preservation_multiplier: number;
   diff_output_preservation_class: string;
+  switch_boundary_every: number;
 }
 
 export interface QuantizeKwargsConfig {
